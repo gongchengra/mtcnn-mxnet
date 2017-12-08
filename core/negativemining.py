@@ -2,9 +2,13 @@ import mxnet as mx
 import numpy as np
 from config import config
 
+
 class NegativeMiningOperator(mx.operator.CustomOp):
-    def __init__(self, cls_ohem=config.CLS_OHEM, cls_ohem_ratio=config.CLS_OHEM_RATIO,
-            bbox_ohem=config.BBOX_OHEM, bbox_ohem_ratio=config.BBOX_OHEM_RATIO):
+    def __init__(self,
+                 cls_ohem=config.CLS_OHEM,
+                 cls_ohem_ratio=config.CLS_OHEM_RATIO,
+                 bbox_ohem=config.BBOX_OHEM,
+                 bbox_ohem_ratio=config.BBOX_OHEM_RATIO):
         super(NegativeMiningOperator, self).__init__()
         self.cls_ohem = cls_ohem
         self.cls_ohem_ratio = cls_ohem_ratio
@@ -12,10 +16,10 @@ class NegativeMiningOperator(mx.operator.CustomOp):
         self.bbox_ohem_ratio = bbox_ohem_ratio
 
     def forward(self, is_train, req, in_data, out_data, aux):
-        cls_prob = in_data[0].asnumpy() # batchsize x 2 x 1 x 1
-        bbox_pred = in_data[1].asnumpy() # batchsize x 4
-        label = in_data[2].asnumpy().astype(int) # batchsize x 1
-        bbox_target = in_data[3].asnumpy() # batchsize x 4
+        cls_prob = in_data[0].asnumpy()  # batchsize x 2 x 1 x 1
+        bbox_pred = in_data[1].asnumpy()  # batchsize x 4
+        label = in_data[2].asnumpy().astype(int)  # batchsize x 1
+        bbox_target = in_data[3].asnumpy()  # batchsize x 4
 
         self.assign(out_data[0], req[0], in_data[0])
         self.assign(out_data[1], req[1], in_data[1])
@@ -30,8 +34,9 @@ class NegativeMiningOperator(mx.operator.CustomOp):
             cls_valid = cls_prob[valid_inds, :]
             label_valid = label.flatten()[valid_inds]
 
-            cls = cls_valid[np.arange(len(valid_inds)), label_valid] + config.EPS
-            log_loss = - np.log(cls)
+            cls = cls_valid[np.arange(len(valid_inds)),
+                            label_valid] + config.EPS
+            log_loss = -np.log(cls)
             keep = np.argsort(log_loss)[::-1][:keep_num]
             cls_keep[valid_inds[keep]] = 1
         else:
@@ -52,7 +57,6 @@ class NegativeMiningOperator(mx.operator.CustomOp):
         else:
             bbox_keep[valid_inds] = 1
         self.assign(out_data[3], req[3], mx.nd.array(bbox_keep))
-
 
     def backward(self, req, out_grad, in_data, out_data, in_grad, aux):
         cls_keep = out_data[2].asnumpy().reshape(-1, 1)

@@ -3,6 +3,7 @@ import numpy as np
 import minibatch
 from config import config
 
+
 class TestLoader(mx.io.DataIter):
     def __init__(self, imdb, batch_size=1, shuffle=False):
         self.imdb = imdb
@@ -41,9 +42,13 @@ class TestLoader(mx.io.DataIter):
         if self.iter_next():
             self.get_batch()
             self.cur += self.batch_size
-            return mx.io.DataBatch(data=self.data, label=self.label,
-                                   pad=self.getpad(), index=self.getindex(),
-                                   provide_data=self.provide_data, provide_label=self.provide_label)
+            return mx.io.DataBatch(
+                data=self.data,
+                label=self.label,
+                pad=self.getpad(),
+                index=self.getindex(),
+                provide_data=self.provide_data,
+                provide_label=self.provide_label)
         else:
             raise StopIteration
 
@@ -64,8 +69,15 @@ class TestLoader(mx.io.DataIter):
         self.data = [mx.nd.array(data[name]) for name in self.data_names]
         self.label = [mx.nd.array(label[name]) for name in self.label_names]
 
+
 class ImageLoader(mx.io.DataIter):
-    def __init__(self, imdb, im_size, batch_size=config.BATCH_SIZE, shuffle=False, ctx=None, work_load_list=None):
+    def __init__(self,
+                 imdb,
+                 im_size,
+                 batch_size=config.BATCH_SIZE,
+                 shuffle=False,
+                 ctx=None,
+                 work_load_list=None):
 
         super(ImageLoader, self).__init__()
 
@@ -87,20 +99,19 @@ class ImageLoader(mx.io.DataIter):
         self.data = None
         self.label = None
 
-        self.label_names= ['label', 'bbox_target']
+        self.label_names = ['label', 'bbox_target']
         self.reset()
         self.get_batch()
 
     @property
     def provide_data(self):
         return [('data', self.data[0].shape)]
-      #  return [(k, v.shape) for k, v in zip(self.data_name, self.data)]
 
+    #  return [(k, v.shape) for k, v in zip(self.data_name, self.data)]
 
     @property
     def provide_label(self):
         return [(k, v.shape) for k, v in zip(self.label_names, self.label)]
-
 
     def reset(self):
         self.cur = 0
@@ -114,9 +125,13 @@ class ImageLoader(mx.io.DataIter):
         if self.iter_next():
             self.get_batch()
             self.cur += self.batch_size
-            return mx.io.DataBatch(data=self.data, label=self.label,
-                                   pad=self.getpad(), index=self.getindex(),
-                                   provide_data=self.provide_data, provide_label=self.provide_label)
+            return mx.io.DataBatch(
+                data=self.data,
+                label=self.label,
+                pad=self.getpad(),
+                index=self.getindex(),
+                provide_data=self.provide_data,
+                provide_label=self.provide_label)
         else:
             raise StopIteration
 
@@ -133,6 +148,7 @@ class ImageLoader(mx.io.DataIter):
         cur_from = self.cur
         cur_to = min(cur_from + self.batch_size, self.size)
         imdb = [self.imdb[self.index[i]] for i in range(cur_from, cur_to)]
-        data, label = minibatch.get_minibatch(imdb, self.num_classes, self.im_size)
+        data, label = minibatch.get_minibatch(imdb, self.num_classes,
+                                              self.im_size)
         self.data = [mx.nd.array(data['data'])]
         self.label = [mx.nd.array(label[name]) for name in self.label_names]

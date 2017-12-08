@@ -10,7 +10,8 @@ class Accuracy(mx.metric.EvalMetric):
     def update(self, labels, preds):
         # output: cls_prob_output, bbox_pred_output, cls_keep_inds, bbox_keep_inds
         # label: label, bbox_target
-        pred_label = mx.ndarray.argmax_channel(preds[0]).asnumpy().astype('int32')
+        pred_label = mx.ndarray.argmax_channel(
+            preds[0]).asnumpy().astype('int32')
         label = labels[0].asnumpy()
 
         # negative mining
@@ -54,7 +55,7 @@ class BBOX_MSE(mx.metric.EvalMetric):
     def __init__(self):
         super(BBOX_MSE, self).__init__('BBOX_MSE')
 
-    def update(self,labels, preds):
+    def update(self, labels, preds):
         pred_delta = preds[1].asnumpy()
         bbox_target = labels[1].asnumpy()
 

@@ -10,17 +10,16 @@ elif size == 24:
 elif size == 48:
     net = "onet"
 
-with open('%s/pos_%s.txt'%(net, size), 'r') as f:
+with open('%s/pos_%s.txt' % (net, size), 'r') as f:
     pos = f.readlines()
 
-with open('%s/neg_%s.txt'%(net, size), 'r') as f:
+with open('%s/neg_%s.txt' % (net, size), 'r') as f:
     neg = f.readlines()
 
-with open('%s/part_%s.txt'%(net, size), 'r') as f:
+with open('%s/part_%s.txt' % (net, size), 'r') as f:
     part = f.readlines()
 
-
-with open("%s/train_%s.txt"%(net, size), "w") as f:
+with open("%s/train_%s.txt" % (net, size), "w") as f:
     f.writelines(pos)
     neg_keep = npr.choice(len(neg), size=600000, replace=False)
     part_keep = npr.choice(len(part), size=300000, replace=False)

@@ -13,7 +13,6 @@ target_file = './anno.txt'
 
 wider = WIDER(file_to_label, path_to_image)
 
-
 line_count = 0
 box_count = 0
 
@@ -26,9 +25,9 @@ with open(target_file, 'w+') as f:
         line = []
         line.append(str(data.image_name))
         line_count += 1
-        for i,box in enumerate(data.bboxes):
+        for i, box in enumerate(data.bboxes):
             box_count += 1
-            for j,bvalue in enumerate(box):
+            for j, bvalue in enumerate(box):
                 line.append(str(bvalue))
 
         line.append('\n')
@@ -36,11 +35,9 @@ with open(target_file, 'w+') as f:
         line_str = ' '.join(line)
         f.write(line_str)
 
-st = time.time()-t
+st = time.time() - t
 print 'end transforming'
 
-print 'spend time:%ld'%st
-print 'total line(images):%d'%line_count
-print 'total boxes(faces):%d'%box_count
-
-
+print 'spend time:%ld' % st
+print 'total line(images):%d' % line_count
+print 'total boxes(faces):%d' % box_count

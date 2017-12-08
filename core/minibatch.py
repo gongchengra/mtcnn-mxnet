@@ -3,6 +3,7 @@ from tools import image_processing
 from config import config
 import numpy as np
 
+
 def get_minibatch(imdb, num_classes, im_size):
     # im_size: 12, 24 or 48
     num_images = len(imdb)
@@ -37,10 +38,10 @@ def get_minibatch(imdb, num_classes, im_size):
         label_array = label_array.reshape(-1, 1)
 
     data = {'data': im_array}
-    label = {'label': label_array,
-             'bbox_target': bbox_target_array}
+    label = {'label': label_array, 'bbox_target': bbox_target_array}
 
     return data, label
+
 
 def get_testbatch(imdb):
     assert len(imdb) == 1, "Single batch only"

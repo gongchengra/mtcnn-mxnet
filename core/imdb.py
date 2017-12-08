@@ -4,6 +4,7 @@ import cPickle
 import numpy as np
 from config import config
 
+
 class IMDB(object):
     def __init__(self, name, image_set, root_path, dataset_path, mode='train'):
         self.name = name + '_' + image_set
@@ -16,7 +17,6 @@ class IMDB(object):
         self.num_classes = 2
         self.image_set_index = self.load_image_set_index()
         self.num_images = len(self.image_set_index)
-
 
     @property
     def cache_path(self):
@@ -34,7 +34,6 @@ class IMDB(object):
             os.mkdir(cache_path)
         return cache_path
 
-
     def load_image_set_index(self):
         """Get image index
 
@@ -45,12 +44,14 @@ class IMDB(object):
         image_set_index: str
             relative path of image
         """
-        image_set_index_file = os.path.join(self.data_path, 'imglists', self.image_set + '.txt')
-        assert os.path.exists(image_set_index_file), 'Path does not exist: {}'.format(image_set_index_file)
+        image_set_index_file = os.path.join(self.data_path, 'imglists',
+                                            self.image_set + '.txt')
+        assert os.path.exists(
+            image_set_index_file), 'Path does not exist: {}'.format(
+                image_set_index_file)
         with open(image_set_index_file, 'r') as f:
             image_set_index = [x.strip().split(' ')[0] for x in f.readlines()]
         return image_set_index
-
 
     def gt_imdb(self):
         """Get and save ground truth image database
@@ -73,7 +74,6 @@ class IMDB(object):
             cPickle.dump(gt_imdb, f, cPickle.HIGHEST_PROTOCOL)
         return gt_imdb
 
-
     def image_path_from_index(self, index):
         """Given image index, return full path
 
@@ -89,9 +89,9 @@ class IMDB(object):
         image_file = os.path.join(self.data_path, 'images', index)
         if "." not in image_file:
             image_file = image_file + '.jpg'
-        assert os.path.exists(image_file), 'Path does not exist: {}'.format(image_file)
+        assert os.path.exists(image_file), 'Path does not exist: {}'.format(
+            image_file)
         return image_file
-
 
     def load_annotations(self):
         """Load annotations
@@ -103,8 +103,11 @@ class IMDB(object):
         imdb: dict
             image database with annotations
         """
-        annotation_file = os.path.join(self.data_path, 'imglists', self.image_set + '.txt')
-        assert os.path.exists(annotation_file), 'annotations not found at {}'.format(annotation_file)
+        annotation_file = os.path.join(self.data_path, 'imglists',
+                                       self.image_set + '.txt')
+        assert os.path.exists(
+            annotation_file), 'annotations not found at {}'.format(
+                annotation_file)
         with open(annotation_file, 'r') as f:
             annotations = f.readlines()
 
@@ -116,22 +119,21 @@ class IMDB(object):
             imdb_ = dict()
             imdb_['image'] = im_path
             if self.mode == 'test':
-#                gt_boxes = map(float, annotation[1:])
-#                boxes = np.array(bbox, dtype=np.float32).reshape(-1, 4)
-#                imdb_['gt_boxes'] = boxes
+                #                gt_boxes = map(float, annotation[1:])
+                #                boxes = np.array(bbox, dtype=np.float32).reshape(-1, 4)
+                #                imdb_['gt_boxes'] = boxes
                 pass
             else:
                 label = annotation[1]
                 imdb_['label'] = int(label)
                 imdb_['flipped'] = False
-                imdb_['bbox_target'] = np.zeros((4,))
+                imdb_['bbox_target'] = np.zeros((4, ))
                 if len(annotation[2:]) == 4:
                     bbox_target = annotation[2:]
                     imdb_['bbox_target'] = np.array(bbox_target).astype(float)
 
             imdb.append(imdb_)
         return imdb
-
 
     def append_flipped_images(self, imdb):
         """append flipped images to imdb
@@ -151,10 +153,12 @@ class IMDB(object):
             m_bbox = imdb_['bbox_target'].copy()
             m_bbox[0], m_bbox[2] = -m_bbox[2], -m_bbox[0]
 
-            entry = {'image': imdb_['image'],
-                     'label': imdb_['label'],
-                     'bbox_target': m_bbox,
-                     'flipped': True}
+            entry = {
+                'image': imdb_['image'],
+                'label': imdb_['label'],
+                'bbox_target': m_bbox,
+                'flipped': True
+            }
 
             imdb.append(entry)
         self.image_set_index *= 2
@@ -179,11 +183,12 @@ class IMDB(object):
         filename = os.path.join(res_folder, self.image_set + '-out.txt')
         with open(filename, 'w') as f:
             for im_ind, index in enumerate(self.image_set_index):
-                f.write('%s\n'%index)
+                f.write('%s\n' % index)
                 dets = all_boxes[im_ind]
-                f.write('%d\n'%dets.shape[0])
+                f.write('%d\n' % dets.shape[0])
                 if len(dets) == 0:
                     continue
                 for k in range(dets.shape[0]):
-                    f.write('{:.2f} {:.2f} {:.2f} {:.2f} {:.5f}\n'.
-                            format(dets[k, 0], dets[k, 1], dets[k, 2]-dets[k, 0], dets[k, 3]-dets[k, 1], dets[k, 4]))
+                    f.write('{:.2f} {:.2f} {:.2f} {:.2f} {:.5f}\n'.format(
+                        dets[k, 0], dets[k, 1], dets[k, 2] - dets[k, 0],
+                        dets[k, 3] - dets[k, 1], dets[k, 4]))

@@ -3,9 +3,15 @@ import numpy as np
 
 from config import config
 
+
 class Detector(object):
-    def __init__(self, symbol, data_size, batch_size, ctx=None,
-                 arg_params=None, aux_params=None):
+    def __init__(self,
+                 symbol,
+                 data_size,
+                 batch_size,
+                 ctx=None,
+                 arg_params=None,
+                 aux_params=None):
         self.symbol = symbol
         self.data_size = data_size
         self.ctx = ctx
@@ -15,15 +21,17 @@ class Detector(object):
         self.aux_params = aux_params
 
         self.batch_size = batch_size
-        data_shapes = {'data': (self.batch_size, 3, self.data_size, self.data_size)}
-        executor = self.symbol.simple_bind(self.ctx, grad_req='null', **dict(data_shapes))
+        data_shapes = {
+            'data': (self.batch_size, 3, self.data_size, self.data_size)
+        }
+        executor = self.symbol.simple_bind(
+            self.ctx, grad_req='null', **dict(data_shapes))
         executor.copy_params_from(self.arg_params, self.aux_params)
         self.executor = executor
 
         self.output_dict = None
         self.data_shape = data_shapes
         self.t = 0
-
 
     def predict(self, databatch):
         # access data
@@ -35,7 +43,7 @@ class Detector(object):
         cur = 0
         n = databatch.shape[0]
         while cur < n:
-            minibatch.append(databatch[cur:min(cur+batch_size, n), :, :, :])
+            minibatch.append(databatch[cur:min(cur + batch_size, n), :, :, :])
             cur += batch_size
 
         data_arrays = self.executor.arg_dict['data']

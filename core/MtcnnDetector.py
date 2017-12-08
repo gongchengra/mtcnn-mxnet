@@ -7,12 +7,14 @@ import numpy as np
 from config import config
 from tools.nms import py_nms
 
+
 class MtcnnDetector(object):
     """
         Joint Face Detection and Alignment using Multi-task Cascaded Convolutional Neural Networks
         see https://github.com/kpzhang93/MTCNN_face_detection_alignment
         this is a mxnet version
     """
+
     def __init__(self,
                  detectors,
                  min_face_size=24,
@@ -26,12 +28,11 @@ class MtcnnDetector(object):
         self.rnet_detector = detectors[1]
         self.onet_detector = detectors[2]
         self.min_face_size = min_face_size
-        self.stride=stride
+        self.stride = stride
         self.thresh = threshold
         self.ctx = ctx
         self.scale_factor = scale_factor
         self.slide_window = slide_window
-
 
     def convert_to_square(self, bbox):
         """
@@ -48,9 +49,9 @@ class MtcnnDetector(object):
 
         h = bbox[:, 3] - bbox[:, 1] + 1
         w = bbox[:, 2] - bbox[:, 0] + 1
-        max_side = np.maximum(h,w)
-        square_bbox[:, 0] = bbox[:, 0] + w*0.5 - max_side*0.5
-        square_bbox[:, 1] = bbox[:, 1] + h*0.5 - max_side*0.5
+        max_side = np.maximum(h, w)
+        square_bbox[:, 0] = bbox[:, 0] + w * 0.5 - max_side * 0.5
+        square_bbox[:, 1] = bbox[:, 1] + h * 0.5 - max_side * 0.5
         square_bbox[:, 2] = square_bbox[:, 0] + max_side - 1
         square_bbox[:, 3] = square_bbox[:, 1] + max_side - 1
         return square_bbox
@@ -99,25 +100,26 @@ class MtcnnDetector(object):
         stride = 2
         cellsize = 12
 
-        t_index = np.where(map>threshold)
+        t_index = np.where(map > threshold)
 
         # find nothing
         if t_index[0].size == 0:
             return np.array([])
 
-        dx1, dy1, dx2, dy2 = [reg[0, i, t_index[0], t_index[1]] for i in range(4)]
+        dx1, dy1, dx2, dy2 = [
+            reg[0, i, t_index[0], t_index[1]] for i in range(4)
+        ]
 
         reg = np.array([dx1, dy1, dx2, dy2])
         score = map[t_index[0], t_index[1]]
-        boundingbox = np.vstack([np.round((stride*t_index[1])/scale),
-                                 np.round((stride*t_index[0])/scale),
-                                 np.round((stride*t_index[1]+cellsize)/scale),
-                                 np.round((stride*t_index[0]+cellsize)/scale),
-                                 score,
-                                 reg])
+        boundingbox = np.vstack([
+            np.round((stride * t_index[1]) / scale),
+            np.round((stride * t_index[0]) / scale),
+            np.round((stride * t_index[1] + cellsize) / scale),
+            np.round((stride * t_index[0] + cellsize) / scale), score, reg
+        ])
 
         return boundingbox.T
-
 
     def resize_image(self, img, scale):
         """
@@ -133,13 +135,13 @@ class MtcnnDetector(object):
             transformed image tensor , 1 x channel x height x width
         """
         height, width, channels = img.shape
-        new_height = int(height * scale)     # resized new height
-        new_width = int(width * scale)       # resized new width
+        new_height = int(height * scale)  # resized new height
+        new_width = int(width * scale)  # resized new width
         new_dim = (new_width, new_height)
-        img_resized = cv2.resize(img, new_dim, interpolation=cv2.INTER_LINEAR)      # resized image
+        img_resized = cv2.resize(
+            img, new_dim, interpolation=cv2.INTER_LINEAR)  # resized image
         img_resized = image_processing.transform(img_resized)
-        return img_resized # (batch_size, c, h, w)
-
+        return img_resized  # (batch_size, c, h, w)
 
     def pad(self, bboxes, w, h):
         """
@@ -165,19 +167,21 @@ class MtcnnDetector(object):
             tmph, tmpw: numpy array, n x 1
                 height and width of the bbox
         """
-        tmpw, tmph = bboxes[:, 2] - bboxes[:, 0] + 1,  bboxes[:, 3] - bboxes[:, 1] + 1
+        tmpw, tmph = bboxes[:, 2] - bboxes[:, 0] + 1, bboxes[:,
+                                                             3] - bboxes[:,
+                                                                         1] + 1
         num_box = bboxes.shape[0]
 
-        dx , dy= np.zeros((num_box, )), np.zeros((num_box, ))
-        edx, edy  = tmpw.copy()-1, tmph.copy()-1
+        dx, dy = np.zeros((num_box, )), np.zeros((num_box, ))
+        edx, edy = tmpw.copy() - 1, tmph.copy() - 1
 
         x, y, ex, ey = bboxes[:, 0], bboxes[:, 1], bboxes[:, 2], bboxes[:, 3]
 
-        tmp_index = np.where(ex > w-1)
+        tmp_index = np.where(ex > w - 1)
         edx[tmp_index] = tmpw[tmp_index] + w - 2 - ex[tmp_index]
         ex[tmp_index] = w - 1
 
-        tmp_index = np.where(ey > h-1)
+        tmp_index = np.where(ey > h - 1)
         edy[tmp_index] = tmph[tmp_index] + h - 2 - ey[tmp_index]
         ey[tmp_index] = h - 1
 
@@ -193,7 +197,6 @@ class MtcnnDetector(object):
         return_list = [item.astype(np.int32) for item in return_list]
 
         return return_list
-
 
     def detect_pnet(self, im):
         """Get face candidates through pnet
@@ -213,14 +216,16 @@ class MtcnnDetector(object):
         h, w, c = im.shape
         net_size = 12
 
-        current_scale = float(net_size) / self.min_face_size    # find initial scale
+        current_scale = float(
+            net_size) / self.min_face_size  # find initial scale
         im_resized = self.resize_image(im, current_scale)
         _, _, current_height, current_width = im_resized.shape
 
         if self.slide_window:
             # sliding window
             temp_rectangles = list()
-            rectangles = list()     # list of rectangles [x11, y11, x12, y12, confidence] (corresponding to original image)
+            rectangles = list(
+            )  # list of rectangles [x11, y11, x12, y12, confidence] (corresponding to original image)
             all_cropped_ims = list()
             while min(current_height, current_width) > net_size:
                 current_y_list = range(0, current_height - net_size + 1, self.stride) if (current_height - net_size) % self.stride == 0 \
@@ -230,19 +235,24 @@ class MtcnnDetector(object):
 
                 for current_y in current_y_list:
                     for current_x in current_x_list:
-                        cropped_im = im_resized[:, :, current_y:current_y + net_size, current_x:current_x + net_size]
+                        cropped_im = im_resized[:, :, current_y:
+                                                current_y + net_size,
+                                                current_x:current_x + net_size]
 
-                        current_rectangle = [int(w * float(current_x) / current_width), int(h * float(current_y) / current_height),
-                                             int(w * float(current_x) / current_width) + int(w * float(net_size) / current_width),
-                                             int(h * float(current_y) / current_height) + int(w * float(net_size) / current_width),
-                                                 0.0]
+                        current_rectangle = [
+                            int(w * float(current_x) / current_width),
+                            int(h * float(current_y) / current_height),
+                            int(w * float(current_x) / current_width) +
+                            int(w * float(net_size) / current_width),
+                            int(h * float(current_y) / current_height) +
+                            int(w * float(net_size) / current_width), 0.0
+                        ]
                         temp_rectangles.append(current_rectangle)
                         all_cropped_ims.append(cropped_im)
 
                 current_scale *= self.scale_factor
                 im_resized = self.resize_image(im, current_scale)
                 _, _, current_height, current_width = im_resized.shape
-
             '''
             # helper for setting PNet batch size
             num_boxes = len(all_cropped_ims)
@@ -265,7 +275,6 @@ face candidates:%d, current batch_size:%d"%(num_boxes, batch_size)
             else:
                 return None, None
 
-
             keep = py_nms(boxes, 0.7, 'Union')
             boxes = boxes[keep]
 
@@ -278,7 +287,8 @@ face candidates:%d, current batch_size:%d"%(num_boxes, batch_size)
                 cls_map, reg = self.pnet_detector.predict(im_resized)
                 cls_map = cls_map.asnumpy()
                 reg = reg.asnumpy()
-                boxes = self.generate_bbox(cls_map[0, 1, :, :], reg, current_scale, self.thresh[0])
+                boxes = self.generate_bbox(cls_map[0, 1, :, :], reg,
+                                           current_scale, self.thresh[0])
 
                 current_scale *= self.scale_factor
                 im_resized = self.resize_image(im, current_scale)
@@ -304,11 +314,12 @@ face candidates:%d, current batch_size:%d"%(num_boxes, batch_size)
             bbh = all_boxes[:, 3] - all_boxes[:, 1] + 1
 
             # refine the boxes
-            boxes_c = np.vstack([all_boxes[:, 0] + all_boxes[:, 5] * bbw,
-                                 all_boxes[:, 1] + all_boxes[:, 6] * bbh,
-                                 all_boxes[:, 2] + all_boxes[:, 7] * bbw,
-                                 all_boxes[:, 3] + all_boxes[:, 8] * bbh,
-                                 all_boxes[:, 4]])
+            boxes_c = np.vstack([
+                all_boxes[:, 0] + all_boxes[:, 5] * bbw,
+                all_boxes[:, 1] + all_boxes[:, 6] * bbh,
+                all_boxes[:, 2] + all_boxes[:, 7] * bbw,
+                all_boxes[:, 3] + all_boxes[:, 8] * bbh, all_boxes[:, 4]
+            ])
             boxes_c = boxes_c.T
 
         return boxes, boxes_c
@@ -336,7 +347,6 @@ face candidates:%d, current batch_size:%d"%(num_boxes, batch_size)
 
         [dy, edy, dx, edx, y, ey, x, ex, tmpw, tmph] = self.pad(dets, w, h)
         num_boxes = dets.shape[0]
-
         '''
         # helper for setting RNet batch size
         batch_size = self.rnet_detector.batch_size
@@ -349,8 +359,10 @@ face candidates:%d, current batch_size:%d"%(num_boxes, batch_size)
         cropped_ims = np.zeros((num_boxes, 3, 24, 24), dtype=np.float32)
         for i in range(num_boxes):
             tmp = np.zeros((tmph[i], tmpw[i], 3), dtype=np.uint8)
-            tmp[dy[i]:edy[i]+1, dx[i]:edx[i]+1, :] = im[y[i]:ey[i]+1, x[i]:ex[i]+1, :]
-            cropped_ims[i, :, :, :] = image_processing.transform(cv2.resize(tmp, (24, 24)))
+            tmp[dy[i]:edy[i] + 1, dx[i]:edx[i] + 1, :] = im[y[i]:ey[i] + 1, x[
+                i]:ex[i] + 1, :]
+            cropped_ims[i, :, :, :] = image_processing.transform(
+                cv2.resize(tmp, (24, 24)))
 
         cls_scores, reg = self.rnet_detector.predict(cropped_ims)
         cls_scores = cls_scores[:, 1].flatten()
@@ -393,7 +405,6 @@ face candidates:%d, current batch_size:%d"%(num_boxes, batch_size)
 
         [dy, edy, dx, edx, y, ey, x, ex, tmpw, tmph] = self.pad(dets, w, h)
         num_boxes = dets.shape[0]
-
         '''
         # helper for setting ONet batch size
         batch_size = self.onet_detector.batch_size
@@ -406,8 +417,10 @@ face candidates:%d, current batch_size:%d"%(num_boxes, batch_size)
         cropped_ims = np.zeros((num_boxes, 3, 48, 48), dtype=np.float32)
         for i in range(num_boxes):
             tmp = np.zeros((tmph[i], tmpw[i], 3), dtype=np.uint8)
-            tmp[dy[i]:edy[i]+1, dx[i]:edx[i]+1, :] = im[y[i]:ey[i]+1, x[i]:ex[i]+1, :]
-            cropped_ims[i, :, :, :] = image_processing.transform(cv2.resize(tmp, (48, 48)))
+            tmp[dy[i]:edy[i] + 1, dx[i]:edx[i] + 1, :] = im[y[i]:ey[i] + 1, x[
+                i]:ex[i] + 1, :]
+            cropped_ims[i, :, :, :] = image_processing.transform(
+                cv2.resize(tmp, (48, 48)))
         cls_scores, reg = self.onet_detector.predict(cropped_ims)
 
         cls_scores = cls_scores[:, 1].flatten()
@@ -426,7 +439,6 @@ face candidates:%d, current batch_size:%d"%(num_boxes, batch_size)
         boxes_c = boxes_c[keep]
 
         return boxes, boxes_c
-
 
     def detect_face(self, imdb, test_data, vis):
         """Detect face over image
@@ -447,7 +459,7 @@ face candidates:%d, current batch_size:%d"%(num_boxes, batch_size)
         batch_idx = 0
         for databatch in test_data:
             if batch_idx % 100 == 0:
-                print "%d images done"%batch_idx
+                print "%d images done" % batch_idx
             im = databatch.data[0].asnumpy().astype(np.uint8)
             t = time.time()
 
@@ -491,14 +503,18 @@ face candidates:%d, current batch_size:%d"%(num_boxes, batch_size)
 
                 t3 = time.time() - t
                 t = time.time()
-                print "time cost " + '{:.3f}'.format(t1+t2+t3) + '  pnet {:.3f}  rnet {:.3f}  onet {:.3f}'.format(t1, t2, t3)
+                print "time cost " + '{:.3f}'.format(
+                    t1 + t2 + t3
+                ) + '  pnet {:.3f}  rnet {:.3f}  onet {:.3f}'.format(
+                    t1, t2, t3)
 
             all_boxes.append(boxes_c)
             batch_idx += 1
         # save detections into fddb format
+
+
 #        imdb.write_results(all_boxes)
         return all_boxes
-
 
     def vis_two(self, im_array, dets1, dets2, thresh=0.9):
         """Visualize detection results before and after calibration
@@ -529,19 +545,29 @@ face candidates:%d, current batch_size:%d"%(num_boxes, batch_size)
             bbox = dets1[i, :4]
             score = dets1[i, 4]
             if score > thresh:
-                rect = plt.Rectangle((bbox[0], bbox[1]),
-                                     bbox[2] - bbox[0],
-                                     bbox[3] - bbox[1], fill=False,
-                                     edgecolor='red', linewidth=0.7)
+                rect = plt.Rectangle(
+                    (bbox[0], bbox[1]),
+                    bbox[2] - bbox[0],
+                    bbox[3] - bbox[1],
+                    fill=False,
+                    edgecolor='red',
+                    linewidth=0.7)
                 plt.gca().add_patch(rect)
-                plt.gca().text(bbox[0], bbox[1] - 2,
-                               '{:.3f}'.format(score),
-                               bbox=dict(facecolor='blue', alpha=0.5), fontsize=12, color='white')
+                plt.gca().text(
+                    bbox[0],
+                    bbox[1] - 2,
+                    '{:.3f}'.format(score),
+                    bbox=dict(facecolor='blue', alpha=0.5),
+                    fontsize=12,
+                    color='white')
             else:
-                rect = plt.Rectangle((bbox[0], bbox[1]),
-                                     bbox[2] - bbox[0],
-                                     bbox[3] - bbox[1], fill=False,
-                                     edgecolor=color, linewidth=0.5)
+                rect = plt.Rectangle(
+                    (bbox[0], bbox[1]),
+                    bbox[2] - bbox[0],
+                    bbox[3] - bbox[1],
+                    fill=False,
+                    edgecolor=color,
+                    linewidth=0.5)
                 plt.gca().add_patch(rect)
 
         plt.subplot(122)
@@ -552,18 +578,28 @@ face candidates:%d, current batch_size:%d"%(num_boxes, batch_size)
             bbox = dets2[i, :4]
             score = dets2[i, 4]
             if score > thresh:
-                rect = plt.Rectangle((bbox[0], bbox[1]),
-                                     bbox[2] - bbox[0],
-                                     bbox[3] - bbox[1], fill=False,
-                                     edgecolor='red', linewidth=0.7)
+                rect = plt.Rectangle(
+                    (bbox[0], bbox[1]),
+                    bbox[2] - bbox[0],
+                    bbox[3] - bbox[1],
+                    fill=False,
+                    edgecolor='red',
+                    linewidth=0.7)
                 plt.gca().add_patch(rect)
-                plt.gca().text(bbox[0], bbox[1] - 2,
-                               '{:.3f}'.format(score),
-                               bbox=dict(facecolor='blue', alpha=0.5), fontsize=12, color='white')
+                plt.gca().text(
+                    bbox[0],
+                    bbox[1] - 2,
+                    '{:.3f}'.format(score),
+                    bbox=dict(facecolor='blue', alpha=0.5),
+                    fontsize=12,
+                    color='white')
             else:
-                rect = plt.Rectangle((bbox[0], bbox[1]),
-                                     bbox[2] - bbox[0],
-                                     bbox[3] - bbox[1], fill=False,
-                                     edgecolor=color, linewidth=0.5)
+                rect = plt.Rectangle(
+                    (bbox[0], bbox[1]),
+                    bbox[2] - bbox[0],
+                    bbox[3] - bbox[1],
+                    fill=False,
+                    edgecolor=color,
+                    linewidth=0.5)
                 plt.gca().add_patch(rect)
         plt.show()

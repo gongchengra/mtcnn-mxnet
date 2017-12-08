@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def transform(im):
     """
     transform into mxnet tensor
@@ -9,5 +10,5 @@ def transform(im):
     """
     im_tensor = im.transpose(2, 0, 1)
     im_tensor = im_tensor[np.newaxis, :]
-    im_tensor = (im_tensor - 127.5)*0.0078125
+    im_tensor = (im_tensor - 127.5) * 0.0078125
     return im_tensor

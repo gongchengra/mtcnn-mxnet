@@ -22,9 +22,9 @@ with open(anno_file, 'r') as f:
 
 num = len(annotations)
 print "%d pics in total" % num
-p_idx = 0 # positive
-n_idx = 0 # negative
-d_idx = 0 # dont care
+p_idx = 0  # positive
+n_idx = 0  # negative
+d_idx = 0  # dont care
 idx = 0
 box_idx = 0
 for annotation in annotations:
@@ -48,17 +48,17 @@ for annotation in annotations:
 
         Iou = IoU(crop_box, boxes)
 
-        cropped_im = img[ny : ny + size, nx : nx + size, :]
-        resized_im = cv2.resize(cropped_im, (12, 12), interpolation=cv2.INTER_LINEAR)
+        cropped_im = img[ny:ny + size, nx:nx + size, :]
+        resized_im = cv2.resize(
+            cropped_im, (12, 12), interpolation=cv2.INTER_LINEAR)
 
         if np.max(Iou) < 0.3:
             # Iou with all gts must below 0.3
-            save_file = os.path.join(neg_save_dir, "%s.jpg"%n_idx)
-            f2.write("12/negative/%s"%n_idx + ' 0\n')
+            save_file = os.path.join(neg_save_dir, "%s.jpg" % n_idx)
+            f2.write("12/negative/%s" % n_idx + ' 0\n')
             cv2.imwrite(save_file, resized_im)
             n_idx += 1
             neg_num += 1
-
 
     for box in boxes:
         # box (x_left, y_top, x_right, y_bottom)
@@ -73,7 +73,7 @@ for annotation in annotations:
 
         # generate negative examples that have overlap with gt
         for i in range(5):
-            size = npr.randint(12,  min(width, height) / 2)
+            size = npr.randint(12, min(width, height) / 2)
             # delta_x and delta_y are offsets of (x1, y1)
             delta_x = npr.randint(max(-size, -x1), w)
             delta_y = npr.randint(max(-size, -y1), h)
@@ -84,13 +84,14 @@ for annotation in annotations:
             crop_box = np.array([nx1, ny1, nx1 + size, ny1 + size])
             Iou = IoU(crop_box, boxes)
 
-            cropped_im = img[ny1 : ny1 + size, nx1 : nx1 + size, :]
-            resized_im = cv2.resize(cropped_im, (12, 12), interpolation=cv2.INTER_LINEAR)
+            cropped_im = img[ny1:ny1 + size, nx1:nx1 + size, :]
+            resized_im = cv2.resize(
+                cropped_im, (12, 12), interpolation=cv2.INTER_LINEAR)
 
             if np.max(Iou) < 0.3:
                 # Iou with all gts must below 0.3
-                save_file = os.path.join(neg_save_dir, "%s.jpg"%n_idx)
-                f2.write("12/negative/%s"%n_idx + ' 0\n')
+                save_file = os.path.join(neg_save_dir, "%s.jpg" % n_idx)
+                f2.write("12/negative/%s" % n_idx + ' 0\n')
                 cv2.imwrite(save_file, resized_im)
                 n_idx += 1
 
@@ -116,22 +117,27 @@ for annotation in annotations:
             offset_x2 = (x2 - nx2) / float(size)
             offset_y2 = (y2 - ny2) / float(size)
 
-            cropped_im = img[ny1 : ny2, nx1 : nx2, :]
-            resized_im = cv2.resize(cropped_im, (12, 12), interpolation=cv2.INTER_LINEAR)
+            cropped_im = img[ny1:ny2, nx1:nx2, :]
+            resized_im = cv2.resize(
+                cropped_im, (12, 12), interpolation=cv2.INTER_LINEAR)
 
             box_ = box.reshape(1, -1)
             if IoU(crop_box, box_) >= 0.65:
-                save_file = os.path.join(pos_save_dir, "%s.jpg"%p_idx)
-                f1.write("12/positive/%s"%p_idx + ' 1 %.2f %.2f %.2f %.2f\n'%(offset_x1, offset_y1, offset_x2, offset_y2))
+                save_file = os.path.join(pos_save_dir, "%s.jpg" % p_idx)
+                f1.write(
+                    "12/positive/%s" % p_idx + ' 1 %.2f %.2f %.2f %.2f\n' %
+                    (offset_x1, offset_y1, offset_x2, offset_y2))
                 cv2.imwrite(save_file, resized_im)
                 p_idx += 1
             elif IoU(crop_box, box_) >= 0.4:
-                save_file = os.path.join(part_save_dir, "%s.jpg"%d_idx)
-                f3.write("12/part/%s"%d_idx + ' -1 %.2f %.2f %.2f %.2f\n'%(offset_x1, offset_y1, offset_x2, offset_y2))
+                save_file = os.path.join(part_save_dir, "%s.jpg" % d_idx)
+                f3.write("12/part/%s" % d_idx + ' -1 %.2f %.2f %.2f %.2f\n' %
+                         (offset_x1, offset_y1, offset_x2, offset_y2))
                 cv2.imwrite(save_file, resized_im)
                 d_idx += 1
         box_idx += 1
-        print "%s images done, pos: %s part: %s neg: %s"%(idx, p_idx, d_idx, n_idx)
+        print "%s images done, pos: %s part: %s neg: %s" % (idx, p_idx, d_idx,
+                                                            n_idx)
 
 f1.close()
 f2.close()

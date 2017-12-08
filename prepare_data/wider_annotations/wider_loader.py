@@ -26,8 +26,8 @@ class WIDER(object):
                     self.f[self.file_list.value[0][event_idx]].value[0]):
 
                 im_name = self.f[im].value.tostring().decode('utf-16')
-                face_bbx = self.f[self.f[self.face_bbx_list.value
-                                  [0][event_idx]].value[0][im_idx]].value
+                face_bbx = self.f[self.f[self.face_bbx_list.value[0][
+                    event_idx]].value[0][im_idx]].value
 
                 bboxes = []
 
@@ -38,5 +38,6 @@ class WIDER(object):
                     ymax = int(face_bbx[1][i] + face_bbx[3][i])
                     bboxes.append((xmin, ymin, xmax, ymax))
 
-                yield DATA(os.path.join(self.path_to_image, directory,
-                           im_name + '.jpg'), bboxes)
+                yield DATA(
+                    os.path.join(self.path_to_image, directory,
+                                 im_name + '.jpg'), bboxes)
